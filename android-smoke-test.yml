@@ -1,0 +1,37 @@
+name: GeoDecor Studio Android64 build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  core-tests:
+    name: Portable theme-analysis tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure portable tests
+        run: cmake -S tests -B build-tests -DCMAKE_BUILD_TYPE=Release
+      - name: Compile portable tests
+        run: cmake --build build-tests --parallel
+      - name: Run portable tests
+        run: ctest --test-dir build-tests --output-on-failure
+
+  android64:
+    name: Build for Geometry Dash Android 2.2081
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Geode mod
+        id: build
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          sdk: latest
+          target: Android64
+      - name: Upload .geode package
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeoDecorStudio-Android64
+          path: ${{ steps.build.outputs.build-output }}/*.geode
+          if-no-files-found: error

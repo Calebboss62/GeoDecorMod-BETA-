@@ -1,0 +1,14 @@
+{
+  "geode": "v5.11.2",
+  "gd": {
+    "android": "2.2081"
+  },
+  "id": "calebboss62.geodecorstudio",
+  "name": "GeoDecor Studio",
+  "version": "v0.2.0",
+  "developer": "Calebboss62",
+  "description": "Read-only level theme analysis foundation for Geometry Dash 2.2081.",
+  "dependencies": {
+    "hjfod.gmd-api": ">=v1.5.0"
+  }
+}
