@@ -1,47 +1,47 @@
-# GeoDecor Studio — v0.2.0 analysis core
+# GeoDecor Studio v0.3.0
 
-Target: Geometry Dash **2.2081** on Android64, using Geode **v5.11.2**.
+**Automatically analyze Geometry Dash levels and build toward amazing custom decorations!**
 
-This version adds the first concrete analysis engine. It imports `.gmd`, `.lvl`, and `.gmd2` through the cross-platform `hjfod.gmd-api` dependency, decodes the level string, parses its start settings and object records, and builds a read-only theme profile.
+[⬇️ DOWNLOAD GEODE MOD](https://github.com/Calebboss62/GeoDecorMod-BETA-/releases/latest)
 
-## What is implemented
+**Platform:** Geometry Dash 2.2081 (Android64)  
+**Mod loader:** Geode 5.11.2
 
-- Bounded parser for the decoded Geometry Dash inner level string.
-- Start settings: background/ground texture IDs and initial color-channel table (`kS38`).
-- Object sampling: object count, bounds, main/secondary channel use, explicit RGB trigger colors, and objects marked as glow-disabled.
-- Theme profile: available palette colors, visual-style/atmosphere estimate, and object density.
-- Theme mixing for the extracted profile data.
-- GMD-API bridge for `.gmd`, `.lvl`, and `.gmd2` imports.
-- Portable C++ tests and an Android64 GitHub Actions build.
+## Current features
 
-## Safety design
+- Read and parse Geometry Dash level data.
+- Analyze level colors and palettes.
+- Estimate visual style and atmosphere.
+- Analyze object density and bounds.
+- Mix extracted theme data.
+- Import `.gmd`, `.lvl`, and `.gmd2` level files through GMD-API.
+- Android64 build through GitHub Actions.
 
-The parser and analyzer only read source data. They do not edit, delete, reorder, or rewrite any gameplay/layout object. No decoration object is inserted in this milestone. This avoids guessing object IDs before the sprite catalog is verified on Android.
+## Safety
 
-## Put this version into the GitHub repository
+The current analysis engine reads level data without editing, deleting, or rearranging gameplay objects.
 
-1. Download and extract this ZIP on the computer.
-2. Open `Calebboss62/GeoDecorMod-BETA-` on GitHub and choose **Add file → Upload files**.
-3. Upload the extracted project contents, not just this ZIP. Keep the `.github/workflows/android-smoke-test.yml` path intact.
-4. Commit the files to the `main` branch.
+## What's coming next
 
-## Build
+- Automatic level decoration.
+- Custom decoration templates.
+- JSON template import/export.
+- Theme presets and mixing tools.
+- Decoration preview.
+- Undo and redo.
+- More advanced glow and visual-style analysis.
 
-The GitHub workflow runs portable tests first, then builds an Android64 `.geode` package. A successful workflow means the source compiled and the artifact was packaged; it does **not** prove in-game behavior. Download the `GeoDecorStudio-Android64` artifact from the Actions run after a green build.
+## Installation
 
-## Local portable tests
+1. Download the latest release above.
+2. Extract the downloaded ZIP.
+3. Locate the `.geode` file.
+4. Install it using Geode on a compatible Geometry Dash installation.
 
-```sh
-cmake -S tests -B build-tests -DCMAKE_BUILD_TYPE=Release
-cmake --build build-tests --parallel
-ctest --test-dir build-tests --output-on-failure
-```
+## Building
 
-The Geode mod build itself requires the Geode SDK/CLI or the supplied GitHub Actions workflow.
+This project includes a GitHub Actions workflow that runs portable tests and builds the Android64 Geode package.
 
-## Known limits in v0.2.0
+[View build history](https://github.com/Calebboss62/GeoDecorMod-BETA-/actions)
 
-- The `kS38` initial color-channel table is parsed; legacy pre-2.0 color fields and runtime animated color changes are not fully reconstructed yet.
-- Glow cannot be reliably inferred from the level string alone. Sprite metadata and the Android resource atlas are needed; the profile explicitly reports this limitation.
-- Theme labels are heuristics, not AI image recognition.
-- No preview renderer, decoration insertion, template editor, JSON template import/export UI, or undo/redo UI is wired yet. Those come after safe object-ID/resource mapping.
+[View source code](https://github.com/Calebboss62/GeoDecorMod-BETA-)
