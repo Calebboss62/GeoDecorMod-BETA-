@@ -1,10 +1,13 @@
+
 #include "LevelString.hpp"
 #include "ThemeAnalyzer.hpp"
+#include "BlockDNA.hpp"
 
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace geodecor;
 
@@ -17,12 +20,13 @@ int main() {
 
     const auto original = sample;
     auto parsed = parseInnerLevelString(sample);
+
     assert(parsed.ok);
     assert(parsed.document.objects.size() == 3);
     assert(parsed.document.settings.backgroundTexture == 3);
     assert(parsed.document.settings.groundTexture == 2);
     assert(parsed.document.settings.colors.size() == 4);
-    assert(sample == original); // analysis must never mutate the source string
+    assert(sample == original);
 
     auto profile = analyzeTheme(parsed.document);
     assert(profile.objectCount == 3);
@@ -42,6 +46,40 @@ int main() {
     auto mixed = mixThemes(profile, profile, 0.5);
     assert(mixed.primary.has_value());
     assert(mixed.primary->r == profile.primary->r);
+
+    // Block DNA: inventory and object ID matching.
+    auto dna = analyzeBlockDNA(parsed.document);
+    assert(dna.totalObjects == 3);
+    assert(dna.entries.size() == 2);
+    assert(dna.entries[0].objectId == 1);
+    assert(dna.entries[0].count == 2);
+    assert(dna.entries[0].hasBounds);
+    assert(dna.entries[0].minX == 0.0);
+    assert(dna.entries[0].maxX == 200.0);
+    assert(dna.entries[0].minY == 0.0);
+    assert(dna.entries[0].maxY == 30.0);
+    assert(dna.entries[1].objectId == 899);
+    assert(dna.entries[1].count == 1);
+
+    auto blockMatches = findObjectsById(parsed.document, 1);
+    assert(blockMatches.size() == 2);
+    assert(blockMatches[0] == 0);
+    assert(blockMatches[1] == 2);
+
+    // Match reference metadata using exact Geometry Dash object IDs.
+    std::vector<BlockReference> references = {
+        {899, "Reference Block", "solid", "blocks/899.png", {"solid", "basic"}},
+        {1, "Basic Block", "solid", "blocks/1.png", {"basic"}},
+        {0, "Invalid Reference", "unknown", "", {}},
+        {899, "Duplicate Reference", "solid", "", {}}
+    };
+
+    auto referenceMatches = matchBlockReferences(parsed.document, references);
+    assert(referenceMatches.size() == 2);
+    assert(referenceMatches[0].reference.objectId == 899);
+    assert(referenceMatches[0].targetObjectCount == 1);
+    assert(referenceMatches[1].reference.objectId == 1);
+    assert(referenceMatches[1].targetObjectCount == 2);
 
     auto malformed = parseInnerLevelString("kA1,1;1,1,2,0,3;");
     assert(!malformed.ok);
