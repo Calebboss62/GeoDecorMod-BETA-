@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/core/LevelString.cpp
     src/core/ThemeAnalyzer.cpp
+    src/core/BlockDNA.cpp
     src/integration/GmdImport.cpp
 )
 
