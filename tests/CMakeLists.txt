@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.20)
 project(GeoDecorCoreTests LANGUAGES CXX)
 
@@ -8,7 +9,9 @@ add_executable(geodecor-core-tests
     test_main.cpp
     ../src/core/LevelString.cpp
     ../src/core/ThemeAnalyzer.cpp
+    ../src/core/BlockDNA.cpp
 )
+
 target_include_directories(geodecor-core-tests PRIVATE ../src/core)
 
 if (MSVC)
