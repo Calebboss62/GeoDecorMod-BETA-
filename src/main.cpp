@@ -4,8 +4,12 @@
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 
+#include <algorithm>
+#include <cmath>
+
 using namespace geode::prelude;
 
+// Opens the GeoDecor Studio popup
 static void openGeoDecorStudio() {
     auto popup = FLAlertLayer::create(
         "GeoDecor Studio",
@@ -69,14 +73,17 @@ protected:
 
     float m_dragThreshold = 12.f;
 
+    // Keeps the button inside the visible screen
     void clampToScreen() {
         auto size = CCDirector::sharedDirector()->getWinSize();
 
-        float halfWidth = m_button->getContentSize().width
-            * m_button->getScaleX() * 0.5f;
+        float halfWidth =
+            m_button->getContentSize().width *
+            m_button->getScaleX() * 0.5f;
 
-        float halfHeight = m_button->getContentSize().height
-            * m_button->getScaleY() * 0.5f;
+        float halfHeight =
+            m_button->getContentSize().height *
+            m_button->getScaleY() * 0.5f;
 
         auto pos = this->getPosition();
 
@@ -119,7 +126,6 @@ public:
         this->addChild(m_button);
 
         auto mod = Mod::get();
-
         auto winSize = CCDirector::sharedDirector()->getWinSize();
 
         float savedX = mod->getSavedValue<float>(
@@ -133,7 +139,7 @@ public:
         );
 
         if (savedX < 0.f || savedY < 0.f) {
-            // Default position: upper-left area of the editor.
+            // Default position near the upper-left editor area.
             savedX = winSize.width * 0.23f;
             savedY = winSize.height * 0.80f;
         }
@@ -172,12 +178,24 @@ public:
         CCNode::onExit();
     }
 
+    // Detects touches on the button
     bool ccTouchBegan(CCTouch* touch, CCEvent*) {
-        auto local = this->convertToNodeSpace(
+        auto buttonLocal = m_button->convertToNodeSpace(
             touch->getLocation()
         );
 
-        if (!m_button->getBoundingBox().containsPoint(local))
+        auto buttonSize = m_button->getContentSize();
+        auto anchor = m_button->getAnchorPoint();
+
+        CCRect buttonRect(
+            -anchor.x * buttonSize.width,
+            -anchor.y * buttonSize.height,
+            buttonSize.width,
+            buttonSize.height
+        );
+
+        // Corrected hit detection
+        if (!buttonRect.containsPoint(buttonLocal))
             return false;
 
         m_dragging = true;
@@ -194,6 +212,7 @@ public:
         return true;
     }
 
+    // Moves the button while dragging
     void ccTouchMoved(CCTouch* touch, CCEvent*) {
         if (!m_dragging)
             return;
@@ -222,6 +241,7 @@ public:
         }
     }
 
+    // Opens Studio when tapped, saves position after dragging
     void ccTouchEnded(CCTouch*, CCEvent*) {
         if (!m_dragging)
             return;
