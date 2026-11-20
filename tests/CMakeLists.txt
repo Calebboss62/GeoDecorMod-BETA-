@@ -11,8 +11,8 @@ add_executable(geodecor-core-tests
     ../src/core/ThemeAnalyzer.cpp
     ../src/core/BlockDNA.cpp
     ../src/core/DecorationPlanner.cpp
+    ../src/core/DecorationEngine.cpp
 )
-
 
 target_include_directories(geodecor-core-tests PRIVATE ../src/core)
 
