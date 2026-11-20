@@ -143,10 +143,11 @@ int main() {
     assert(generation.skippedInvalidSources == 0);
     assert(!generation.modifiesLevel);
 
-    for (const auto& decoration : generation.decorations) {
-        assert(decoration.decorationObjectId == 700);
-        assert(decoration.sourceObjectId > 0);
-    }
+   for (const auto& decoration : generation.decorations) {
+    (void)decoration;
+    assert(decoration.decorationObjectId == 700);
+    assert(decoration.sourceObjectId > 0);
+}
 
     // Invalid clearance must safely produce no decorations.
     auto invalidGeneration = generateDecorationProposals(
