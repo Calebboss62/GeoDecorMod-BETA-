@@ -121,7 +121,7 @@ protected:
             STYLES[m_style],
             INTENSITIES[m_intensity]
         );
-        geode::createQuickPopup("Decoration Preview", summary, "Back", nullptr);
+    geode::createQuickPopup("Decoration Preview", summary, "Back", nullptr, nullptr);
     }
 
 public:
