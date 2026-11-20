@@ -10,7 +10,9 @@ add_executable(geodecor-core-tests
     ../src/core/LevelString.cpp
     ../src/core/ThemeAnalyzer.cpp
     ../src/core/BlockDNA.cpp
+    ../src/core/DecorationPlanner.cpp
 )
+
 
 target_include_directories(geodecor-core-tests PRIVATE ../src/core)
 
