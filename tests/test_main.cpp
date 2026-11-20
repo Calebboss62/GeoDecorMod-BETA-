@@ -1,5 +1,6 @@
 
 #include "DecorationPlanner.hpp"
+#include "DecorationEngine.hpp"
 #include "LevelString.hpp"
 #include "ThemeAnalyzer.hpp"
 #include "BlockDNA.hpp"
@@ -111,6 +112,51 @@ int main() {
 
     auto glowPlan = buildDecorationPlan(parsed.document, references, settings);
     assert(glowPlan.candidates.empty());
+
+    // Decoration engine: generate read-only decoration proposals.
+    DecorationSettings engineSettings;
+    engineSettings.blockSet = BlockSet::Solid;
+    engineSettings.style = DecorationStyle::Modern;
+    engineSettings.intensity = DecorationIntensity::Medium;
+    engineSettings.glowEnabled = true;
+
+    auto enginePlan = buildDecorationPlan(
+        parsed.document,
+        references,
+        engineSettings
+    );
+
+    std::vector<DecorationAsset> catalog = {
+        {700, DecorationStyle::Modern, "detail", 0.0, 40.0, 12.0, false}
+    };
+
+    auto generation = generateDecorationProposals(
+        parsed.document,
+        enginePlan,
+        catalog,
+        20.0
+    );
+
+    assert(generation.examinedSources == 3);
+    assert(generation.proposedDecorations == 3);
+    assert(generation.blockedByClearance == 0);
+    assert(generation.skippedInvalidSources == 0);
+    assert(!generation.modifiesLevel);
+
+    for (const auto& decoration : generation.decorations) {
+        assert(decoration.decorationObjectId == 700);
+        assert(decoration.sourceObjectId > 0);
+    }
+
+    // Invalid clearance must safely produce no decorations.
+    auto invalidGeneration = generateDecorationProposals(
+        parsed.document,
+        enginePlan,
+        catalog,
+        -1.0
+    );
+
+    assert(invalidGeneration.proposedDecorations == 0);
 
     // Parser error handling tests.
     auto malformed = parseInnerLevelString("kA1,1;1,1,2,0,3;");
