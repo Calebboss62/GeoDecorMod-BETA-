@@ -1,5 +1,4 @@
-
-    #include <Geode/Geode.hpp>
+#include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/EditorUI.hpp>
 #include <Geode/ui/Popup.hpp>
@@ -8,9 +7,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 using namespace geode::prelude;
+
+// ============================================================
+// GeoDecor Studio Workspace
+// ============================================================
 
 class GeoDecorWorkspace : public geode::Popup {
 protected:
@@ -20,6 +26,7 @@ protected:
     bool m_glow = true;
 
     CCLabelBMFont* m_status = nullptr;
+    LevelEditorLayer* m_editorLayer = nullptr;
 
     static constexpr const char* BLOCK_SETS[] = {
         "All Blocks",
@@ -44,7 +51,8 @@ protected:
     };
 
     void updateStatus() {
-        if (!m_status) return;
+        if (!m_status)
+            return;
 
         auto text = fmt::format(
             "Blocks: {}   |   Glow: {}\nStyle: {}   |   Intensity: {}",
@@ -71,8 +79,10 @@ protected:
         );
     }
 
-    bool init() {
-        if (!geode::Popup::init(360.f, 350.f))
+    bool init(LevelEditorLayer* editorLayer) {
+        m_editorLayer = editorLayer;
+
+        if (!geode::Popup::init(360.f, 390.f))
             return false;
 
         this->setTitle("GeoDecor Studio");
@@ -82,7 +92,7 @@ protected:
         auto centerX = size.width / 2.f;
         auto centerY = size.height / 2.f;
 
-        // Current settings display.
+        // Settings display.
         m_status = CCLabelBMFont::create(
             "",
             "bigFont.fnt"
@@ -90,14 +100,15 @@ protected:
 
         m_status->setScale(0.38f);
         m_status->setAlignment(kCCTextAlignmentCenter);
+
         m_status->setPosition({
             centerX,
-            centerY + 105.f
+            centerY + 125.f
         });
 
         m_mainLayer->addChild(m_status);
 
-        // Main button menu.
+        // Button menu.
         auto menu = CCMenu::create();
 
         menu->setPosition({
@@ -112,7 +123,7 @@ protected:
             menu_selector(GeoDecorWorkspace::onNextBlocks)
         );
 
-        blocks->setPosition({0.f, 85.f});
+        blocks->setPosition({0.f, 105.f});
         menu->addChild(blocks);
 
         auto glow = makeButton(
@@ -120,7 +131,7 @@ protected:
             menu_selector(GeoDecorWorkspace::onToggleGlow)
         );
 
-        glow->setPosition({0.f, 47.f});
+        glow->setPosition({0.f, 67.f});
         menu->addChild(glow);
 
         auto style = makeButton(
@@ -128,7 +139,7 @@ protected:
             menu_selector(GeoDecorWorkspace::onNextStyle)
         );
 
-        style->setPosition({0.f, 9.f});
+        style->setPosition({0.f, 29.f});
         menu->addChild(style);
 
         auto intensity = makeButton(
@@ -136,7 +147,7 @@ protected:
             menu_selector(GeoDecorWorkspace::onNextIntensity)
         );
 
-        intensity->setPosition({0.f, -29.f});
+        intensity->setPosition({0.f, -9.f});
         menu->addChild(intensity);
 
         auto preview = makeButton(
@@ -144,17 +155,25 @@ protected:
             menu_selector(GeoDecorWorkspace::onPreview)
         );
 
-        preview->setPosition({0.f, -67.f});
+        preview->setPosition({0.f, -47.f});
         menu->addChild(preview);
 
-        // NEW: Decoration Planner button.
         auto planner = makeButton(
             "Decoration Planner",
             menu_selector(GeoDecorWorkspace::onPlannerStatus)
         );
 
-        planner->setPosition({0.f, -105.f});
+        planner->setPosition({0.f, -85.f});
         menu->addChild(planner);
+
+        // NEW: Live level scanner.
+        auto scan = makeButton(
+            "Scan Current Level",
+            menu_selector(GeoDecorWorkspace::onScanLevel)
+        );
+
+        scan->setPosition({0.f, -123.f});
+        menu->addChild(scan);
 
         updateStatus();
 
@@ -189,7 +208,7 @@ protected:
             "Style: {}\n"
             "Intensity: {}\n\n"
             "This is a settings preview only. "
-            "No level objects have been changed yet.",
+            "No level objects have been changed.",
             BLOCK_SETS[m_blockSet],
             m_glow ? "On" : "Off",
             STYLES[m_style],
@@ -205,19 +224,17 @@ protected:
         );
     }
 
-    // NEW: Decoration Planner information screen.
     void onPlannerStatus(CCObject*) {
         auto summary =
             "DECORATION PLANNER\n\n"
             "Planner foundation: READY\n\n"
             "Block DNA matching: IMPLEMENTED\n"
             "Reference matching: IMPLEMENTED\n"
-            "Live editor scanning: NOT CONNECTED YET\n"
+            "Live editor scanning: READY\n"
             "Decoration placement: NOT ACTIVE YET\n\n"
-            "The planner foundation can identify "
-            "matching objects using Geometry Dash "
-            "object IDs.\n\n"
-            "This screen does not modify your level.";
+            "The scanner can inspect actual objects "
+            "in your open Geometry Dash level.\n\n"
+            "Scanning does not modify your level.";
 
         geode::createQuickPopup(
             "Decoration Planner",
@@ -228,11 +245,145 @@ protected:
         );
     }
 
+    // ========================================================
+    // LIVE LEVEL SCANNER
+    // ========================================================
+
+    void onScanLevel(CCObject*) {
+        if (!m_editorLayer) {
+            geode::createQuickPopup(
+                "No Open Level",
+                "Open GeoDecor Studio from inside "
+                "the Geometry Dash level editor "
+                "to scan a level.",
+                "Back",
+                nullptr,
+                nullptr
+            );
+
+            return;
+        }
+
+        auto objects = m_editorLayer->getAllObjects();
+
+        if (!objects) {
+            geode::createQuickPopup(
+                "Scan Failed",
+                "Geometry Dash did not provide "
+                "the current level object list.",
+                "Back",
+                nullptr,
+                nullptr
+            );
+
+            return;
+        }
+
+        std::map<int, std::size_t> objectCounts;
+
+        std::size_t totalObjects = 0;
+        std::size_t invalidObjects = 0;
+
+        // Read every object in the editor.
+        for (unsigned int i = 0; i < objects->count(); i++) {
+            auto object = static_cast<GameObject*>(
+                objects->objectAtIndex(i)
+            );
+
+            if (!object) {
+                continue;
+            }
+
+            int objectId = object->m_objectID;
+
+            if (objectId <= 0) {
+                invalidObjects++;
+                continue;
+            }
+
+            objectCounts[objectId]++;
+            totalObjects++;
+        }
+
+        // Convert the inventory into a sortable list.
+        std::vector<std::pair<int, std::size_t>> ranked;
+
+        for (const auto& entry : objectCounts) {
+            ranked.push_back(entry);
+        }
+
+        std::sort(
+            ranked.begin(),
+            ranked.end(),
+            [](const auto& a, const auto& b) {
+                if (a.second != b.second)
+                    return a.second > b.second;
+
+                return a.first < b.first;
+            }
+        );
+
+        // Build the report.
+        std::string report = fmt::format(
+            "LEVEL SCAN COMPLETE!\n\n"
+            "Total recognized objects: {}\n"
+            "Unique object IDs: {}\n"
+            "Skipped invalid objects: {}\n\n"
+            "MOST COMMON OBJECTS\n",
+            totalObjects,
+            objectCounts.size(),
+            invalidObjects
+        );
+
+        if (ranked.empty()) {
+            report += "\nNo valid object IDs were found.";
+        }
+        else {
+            const std::size_t displayCount =
+                std::min<std::size_t>(ranked.size(), 10);
+
+            for (std::size_t i = 0; i < displayCount; i++) {
+                report += fmt::format(
+                    "\nID {}  -  {} objects",
+                    ranked[i].first,
+                    ranked[i].second
+                );
+            }
+
+            if (ranked.size() > displayCount) {
+                report += fmt::format(
+                    "\n\nAnd {} more object IDs.",
+                    ranked.size() - displayCount
+                );
+            }
+        }
+
+        report +=
+            "\n\nScan mode: READ ONLY"
+            "\nYour level was not modified.";
+
+        geode::createQuickPopup(
+            "GeoDecor Level Scanner",
+            report,
+            "Back",
+            nullptr,
+            nullptr
+        );
+
+        log::info(
+            "GeoDecor scanned {} objects across {} unique IDs.",
+            totalObjects,
+            objectCounts.size()
+        );
+    }
+
 public:
-    static GeoDecorWorkspace* create() {
+    static GeoDecorWorkspace* create(
+        LevelEditorLayer* editorLayer
+    ) {
         auto ret = new GeoDecorWorkspace();
 
-        if (ret && ret->init()) {
+        if (ret && ret->init(editorLayer)) {
             ret->autorelease();
             return ret;
         }
@@ -242,13 +393,22 @@ public:
     }
 };
 
-static void openGeoDecorStudio() {
-    if (auto popup = GeoDecorWorkspace::create()) {
+// ============================================================
+// OPEN WORKSPACE
+// ============================================================
+
+static void openGeoDecorStudio(
+    LevelEditorLayer* editorLayer = nullptr
+) {
+    if (auto popup = GeoDecorWorkspace::create(editorLayer)) {
         popup->show();
     }
 }
 
-// Main menu button.
+// ============================================================
+// MAIN MENU BUTTON
+// ============================================================
+
 class $modify(GeoDecorStudioMenuLayer, MenuLayer) {
     bool init() {
         if (!MenuLayer::init())
@@ -279,13 +439,18 @@ class $modify(GeoDecorStudioMenuLayer, MenuLayer) {
     }
 };
 
-// Draggable editor button.
+// ============================================================
+// DRAGGABLE EDITOR BUTTON
+// ============================================================
+
 class GeoDecorDraggableButton :
     public CCNode,
     public CCTargetedTouchDelegate {
 
 protected:
     ButtonSprite* m_button = nullptr;
+
+    LevelEditorLayer* m_editorLayer = nullptr;
 
     CCPoint m_touchStart = CCPointZero;
     CCPoint m_startPosition = CCPointZero;
@@ -322,10 +487,12 @@ protected:
     }
 
 public:
-    static GeoDecorDraggableButton* create() {
+    static GeoDecorDraggableButton* create(
+        LevelEditorLayer* editorLayer
+    ) {
         auto ret = new GeoDecorDraggableButton();
 
-        if (ret && ret->init()) {
+        if (ret && ret->init(editorLayer)) {
             ret->autorelease();
             return ret;
         }
@@ -334,9 +501,11 @@ public:
         return nullptr;
     }
 
-    bool init() {
+    bool init(LevelEditorLayer* editorLayer) {
         if (!CCNode::init())
             return false;
+
+        m_editorLayer = editorLayer;
 
         m_button = ButtonSprite::create("GeoDecor");
 
@@ -473,8 +642,9 @@ public:
 
         m_dragging = false;
 
-        if (!m_moved)
-            openGeoDecorStudio();
+        if (!m_moved) {
+            openGeoDecorStudio(m_editorLayer);
+        }
 
         auto pos = this->getPosition();
 
@@ -494,13 +664,17 @@ public:
     }
 };
 
-// Add draggable button to the editor.
+// ============================================================
+// ADD BUTTON TO EDITOR
+// ============================================================
+
 class $modify(GeoDecorStudioEditorUI, EditorUI) {
     bool init(LevelEditorLayer* editorLayer) {
         if (!EditorUI::init(editorLayer))
             return false;
 
-        auto button = GeoDecorDraggableButton::create();
+        auto button =
+            GeoDecorDraggableButton::create(editorLayer);
 
         if (button) {
             button->setID("geodecor-draggable-button");
