@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} SHARED
     src/core/BlockDNA.cpp
     src/integration/GmdImport.cpp
     src/core/DecorationPlanner.cpp
+    src/core/DecorationEngine.cpp
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
