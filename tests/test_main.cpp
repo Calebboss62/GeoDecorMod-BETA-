@@ -1,4 +1,6 @@
-
+? 
+```cpp
+#include "DecorationPlanner.hpp"
 #include "LevelString.hpp"
 #include "ThemeAnalyzer.hpp"
 #include "BlockDNA.hpp"
@@ -28,6 +30,7 @@ int main() {
     assert(parsed.document.settings.colors.size() == 4);
     assert(sample == original);
 
+    // Theme analysis tests.
     auto profile = analyzeTheme(parsed.document);
     assert(profile.objectCount == 3);
     assert(profile.background.has_value());
@@ -81,6 +84,36 @@ int main() {
     assert(referenceMatches[1].reference.objectId == 1);
     assert(referenceMatches[1].targetObjectCount == 2);
 
+    // Decoration planner: exact matches only, no level mutation.
+    DecorationSettings settings;
+    settings.blockSet = BlockSet::Solid;
+    settings.style = DecorationStyle::Modern;
+    settings.intensity = DecorationIntensity::Medium;
+    settings.glowEnabled = true;
+
+    auto plan = buildDecorationPlan(parsed.document, references, settings);
+
+    assert(plan.scannedObjectCount == 3);
+    assert(plan.candidates.size() == 3);
+
+    assert(plan.candidates[0].objectId == 899);
+    assert(plan.candidates[0].objectIndex == 1);
+
+    assert(plan.candidates[1].objectId == 1);
+    assert(plan.candidates[1].objectIndex == 0);
+
+    assert(plan.candidates[2].objectId == 1);
+    assert(plan.candidates[2].objectIndex == 2);
+
+    assert(!plan.modifiesLevel);
+    assert(plan.settings.blockSet == BlockSet::Solid);
+
+    settings.blockSet = BlockSet::Glow;
+
+    auto glowPlan = buildDecorationPlan(parsed.document, references, settings);
+    assert(glowPlan.candidates.empty());
+
+    // Parser error handling tests.
     auto malformed = parseInnerLevelString("kA1,1;1,1,2,0,3;");
     assert(!malformed.ok);
     assert(malformed.segment == 1);
@@ -99,3 +132,4 @@ int main() {
     std::cout << "GeoDecor Studio core tests passed\n";
     return 0;
 }
+```
