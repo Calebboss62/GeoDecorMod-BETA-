@@ -1,5 +1,4 @@
-? 
-```cpp
+
 #include "DecorationPlanner.hpp"
 #include "LevelString.hpp"
 #include "ThemeAnalyzer.hpp"
@@ -132,4 +131,3 @@ int main() {
     std::cout << "GeoDecor Studio core tests passed\n";
     return 0;
 }
-```
