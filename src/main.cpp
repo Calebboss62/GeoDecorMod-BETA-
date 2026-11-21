@@ -5,6 +5,9 @@
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include "core/LevelString.hpp"
+#include "core/BlockDNA.hpp"
+#include "core/DecorationPlanner.hpp"
+#include "core/DecorationEngine.hpp"
 
 #include <algorithm>
 #include <cmath>
