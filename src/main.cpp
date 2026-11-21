@@ -304,8 +304,17 @@ std::size_t invalidObjects = 0;
                 continue;
             }
 
-            objectCounts[objectId]++;
-            totalObjects++;
+            auto position = object->getPosition();
+
+geodecor::LevelObject levelObject;
+levelObject.properties[1] = std::to_string(objectId);
+levelObject.properties[2] = std::to_string(position.x);
+levelObject.properties[3] = std::to_string(position.y);
+
+liveLevel.objects.push_back(std::move(levelObject));
+
+objectCounts[objectId]++;
+totalObjects++;
         }
 
         // Convert the inventory into a sortable list.
