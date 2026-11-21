@@ -282,8 +282,10 @@ protected:
 
         std::map<int, std::size_t> objectCounts;
 
-        std::size_t totalObjects = 0;
-        std::size_t invalidObjects = 0;
+geodecor::LevelDocument liveLevel;
+
+std::size_t totalObjects = 0;
+std::size_t invalidObjects = 0;
 
         // Read every object in the editor.
         for (unsigned int i = 0; i < objects->count(); i++) {
