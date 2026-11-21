@@ -4,6 +4,7 @@
 #include <Geode/ui/Popup.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
+#include "core/LevelString.hpp"
 
 #include <algorithm>
 #include <cmath>
