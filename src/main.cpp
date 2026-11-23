@@ -2,6 +2,7 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/EditorUI.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/ScrollLayer.hpp>
 #include <Geode/cocos/touch_dispatcher/CCTouchDelegateProtocol.h>
 #include <Geode/cocos/touch_dispatcher/CCTouchDispatcher.h>
 #include "core/LevelString.hpp"
@@ -16,6 +17,126 @@
 #include <vector>
 
 using namespace geode::prelude;
+
+// ============================================================
+// LIVE BLOCK CATALOG POPUP
+// ============================================================
+
+class GeoDecorBlockCatalogPopup : public geode::Popup {
+protected:
+    bool init(
+        const std::vector<geodecor::BlockDNAEntry>& entries,
+        std::size_t totalObjects,
+        std::size_t invalidObjects
+    ) {
+        if (!geode::Popup::init(360.f, 290.f))
+            return false;
+
+        this->setTitle("Live Block Catalog");
+
+        const auto size = m_mainLayer->getContentSize();
+        const auto summaryText = fmt::format(
+            "{} objects  |  {} unique IDs  |  {} skipped",
+            totalObjects,
+            entries.size(),
+            invalidObjects
+        );
+
+        auto summary = CCLabelBMFont::create(
+            summaryText.c_str(),
+            "bigFont.fnt"
+        );
+        if (summary) {
+            summary->setScale(0.34f);
+            summary->setAlignment(kCCTextAlignmentCenter);
+            summary->setPosition({size.width / 2.f, size.height - 42.f});
+            m_mainLayer->addChild(summary);
+        }
+
+        // Geode's ScrollLayer clips long lists and supports touch scrolling.
+        auto scroll = geode::ScrollLayer::create(
+            CCSize{size.width - 36.f, size.height - 86.f}
+        );
+        if (!scroll)
+            return false;
+
+        scroll->setPosition({18.f, 18.f});
+        m_mainLayer->addChild(scroll);
+
+        scroll->m_contentLayer->setContentWidth(scroll->getContentWidth());
+        scroll->m_contentLayer->setLayout(
+            geode::ScrollLayer::createDefaultListLayout(4.f)
+        );
+
+        if (entries.empty()) {
+            auto emptyLabel = CCLabelBMFont::create(
+                "No valid object IDs were found.",
+                "bigFont.fnt"
+            );
+            if (emptyLabel) {
+                emptyLabel->setScale(0.42f);
+                scroll->m_contentLayer->addChild(emptyLabel);
+            }
+        }
+        else {
+            for (const auto& entry : entries) {
+                const auto rowText = fmt::format(
+                    "Object ID: {}    Count: {}",
+                    entry.objectId,
+                    entry.count
+                );
+
+                auto row = CCLabelBMFont::create(
+                    rowText.c_str(),
+                    "bigFont.fnt"
+                );
+                if (!row)
+                    continue;
+
+                row->setScale(0.42f);
+                row->setAnchorPoint({0.f, 0.5f});
+                scroll->m_contentLayer->addChild(row);
+            }
+        }
+
+        scroll->m_contentLayer->updateLayout();
+
+        // Keep short inventories top-aligned; longer inventories scroll from the top.
+        if (scroll->m_contentLayer->getContentHeight() < scroll->getContentHeight()) {
+            const float difference =
+                scroll->getContentHeight() - scroll->m_contentLayer->getContentHeight();
+            scroll->m_contentLayer->setContentHeight(scroll->getContentHeight());
+
+            for (auto child : CCArrayExt<CCNode*>(scroll->m_contentLayer->getChildren())) {
+                child->setPositionY(child->getPositionY() + difference);
+            }
+        }
+
+        const float scrollRange = std::max(
+            0.f,
+            scroll->m_contentLayer->getContentHeight() - scroll->getContentHeight()
+        );
+        scroll->m_contentLayer->setPositionY(-scrollRange);
+
+        return true;
+    }
+
+public:
+    static GeoDecorBlockCatalogPopup* create(
+        const std::vector<geodecor::BlockDNAEntry>& entries,
+        std::size_t totalObjects,
+        std::size_t invalidObjects
+    ) {
+        auto ret = new GeoDecorBlockCatalogPopup();
+        if (ret && ret->init(entries, totalObjects, invalidObjects)) {
+            ret->autorelease();
+            return ret;
+        }
+
+        CC_SAFE_DELETE(ret);
+        return nullptr;
+    }
+};
 
 // ============================================================
 // GeoDecor Studio Workspace
@@ -331,52 +452,25 @@ liveLevel.objects.push_back(std::move(levelObject));
             }
         );
 
-        // Build the report.
-        std::string report = fmt::format(
-            "LEVEL SCAN COMPLETE!\n\n"
-            "Total recognized objects: {}\n"
-            "Unique object IDs: {}\n"
-            "Skipped invalid objects: {}\n\n"
-            "MOST COMMON OBJECTS\n",
+        // Open the full, scrollable catalog instead of truncating the scan to ten IDs.
+        auto catalog = GeoDecorBlockCatalogPopup::create(
+            ranked,
             totalObjects,
-            dnaReport.entries.size(),
             invalidObjects
         );
 
-        if (ranked.empty()) {
-            report += "\nNo valid object IDs were found.";
+        if (catalog) {
+            catalog->show();
         }
         else {
-            const std::size_t displayCount =
-                std::min<std::size_t>(ranked.size(), 10);
-
-            for (std::size_t i = 0; i < displayCount; i++) {
-                report += fmt::format(
-                    "\nID {}  -  {} objects",
-                    ranked[i].objectId,
-                    ranked[i].count
-                );
-            }
-
-            if (ranked.size() > displayCount) {
-                report += fmt::format(
-                    "\n\nAnd {} more object IDs.",
-                    ranked.size() - displayCount
-                );
-            }
+            geode::createQuickPopup(
+                "Catalog Error",
+                "The Live Block Catalog could not be created.",
+                "Back",
+                nullptr,
+                nullptr
+            );
         }
-
-        report +=
-            "\n\nScan mode: READ ONLY"
-            "\nYour level was not modified.";
-
-        geode::createQuickPopup(
-            "GeoDecor Level Scanner",
-            report,
-            "Back",
-            nullptr,
-            nullptr
-        );
 
         log::info(
             "GeoDecor scanned {} objects across {} unique IDs.",
