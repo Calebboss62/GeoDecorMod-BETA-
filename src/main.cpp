@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -283,12 +282,8 @@ protected:
             return;
         }
 
-        std::map<int, std::size_t> objectCounts;
-
-geodecor::LevelDocument liveLevel;
-
-std::size_t totalObjects = 0;
-std::size_t invalidObjects = 0;
+        geodecor::LevelDocument liveLevel;
+        std::size_t invalidObjects = 0;
 
         // Read every object in the editor.
         for (unsigned int i = 0; i < objects->count(); i++) {
@@ -316,25 +311,23 @@ levelObject.properties[3] = std::to_string(position.y);
 
 liveLevel.objects.push_back(std::move(levelObject));
 
-objectCounts[objectId]++;
-totalObjects++;
+
         }
 
-        // Convert the inventory into a sortable list.
-        std::vector<std::pair<int, std::size_t>> ranked;
+        // Use the shared BlockDNA analyzer for the live level inventory.
+        const auto dnaReport = geodecor::analyzeBlockDNA(liveLevel);
+        const std::size_t totalObjects = dnaReport.totalObjects;
 
-        for (const auto& entry : objectCounts) {
-            ranked.push_back(entry);
-        }
-
+        // Sort catalog entries by frequency, then by object ID.
+        auto ranked = dnaReport.entries;
         std::sort(
             ranked.begin(),
             ranked.end(),
             [](const auto& a, const auto& b) {
-                if (a.second != b.second)
-                    return a.second > b.second;
+                if (a.count != b.count)
+                    return a.count > b.count;
 
-                return a.first < b.first;
+                return a.objectId < b.objectId;
             }
         );
 
@@ -346,7 +339,7 @@ totalObjects++;
             "Skipped invalid objects: {}\n\n"
             "MOST COMMON OBJECTS\n",
             totalObjects,
-            objectCounts.size(),
+            dnaReport.entries.size(),
             invalidObjects
         );
 
@@ -360,8 +353,8 @@ totalObjects++;
             for (std::size_t i = 0; i < displayCount; i++) {
                 report += fmt::format(
                     "\nID {}  -  {} objects",
-                    ranked[i].first,
-                    ranked[i].second
+                    ranked[i].objectId,
+                    ranked[i].count
                 );
             }
 
@@ -388,7 +381,7 @@ totalObjects++;
         log::info(
             "GeoDecor scanned {} objects across {} unique IDs.",
             totalObjects,
-            objectCounts.size()
+            dnaReport.entries.size()
         );
     }
 
