@@ -5,13 +5,21 @@
 #include "ThemeAnalyzer.hpp"
 #include "BlockDNA.hpp"
 
-#include <cassert>
+#include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace geodecor;
+
+#define CHECK(condition) do { \
+    if (!(condition)) { \
+        std::cerr << __FILE__ << ':' << __LINE__ \
+                  << ": CHECK failed: " << #condition << '\n'; \
+        std::exit(EXIT_FAILURE); \
+    } \
+} while (false)
 
 int main() {
     const std::string sample =
@@ -23,51 +31,51 @@ int main() {
     const auto original = sample;
     auto parsed = parseInnerLevelString(sample);
 
-    assert(parsed.ok);
-    assert(parsed.document.objects.size() == 3);
-    assert(parsed.document.settings.backgroundTexture == 3);
-    assert(parsed.document.settings.groundTexture == 2);
-    assert(parsed.document.settings.colors.size() == 4);
-    assert(sample == original);
+    CHECK(parsed.ok);
+    CHECK(parsed.document.objects.size() == 3);
+    CHECK(parsed.document.settings.backgroundTexture == 3);
+    CHECK(parsed.document.settings.groundTexture == 2);
+    CHECK(parsed.document.settings.colors.size() == 4);
+    CHECK(sample == original);
 
     // Theme analysis tests.
     auto profile = analyzeTheme(parsed.document);
-    assert(profile.objectCount == 3);
-    assert(profile.background.has_value());
-    assert(profile.background->r == 5);
-    assert(profile.ground.has_value());
-    assert(profile.ground->r == 7);
-    assert(profile.primary.has_value());
-    assert(profile.primary->r == 10);
-    assert(profile.secondary.has_value());
-    assert(profile.secondary->r == 20);
-    assert(profile.mostUsedChannels.size() >= 1);
-    assert(profile.explicitTriggerColorCount == 1);
-    assert(profile.glowDisabledObjectCount == 1);
-    assert(profile.glowSignal.find("sprite metadata") != std::string::npos);
+    CHECK(profile.objectCount == 3);
+    CHECK(profile.background.has_value());
+    CHECK(profile.background->r == 5);
+    CHECK(profile.ground.has_value());
+    CHECK(profile.ground->r == 7);
+    CHECK(profile.primary.has_value());
+    CHECK(profile.primary->r == 10);
+    CHECK(profile.secondary.has_value());
+    CHECK(profile.secondary->r == 20);
+    CHECK(profile.mostUsedChannels.size() >= 1);
+    CHECK(profile.explicitTriggerColorCount == 1);
+    CHECK(profile.glowDisabledObjectCount == 1);
+    CHECK(profile.glowSignal.find("sprite metadata") != std::string::npos);
 
     auto mixed = mixThemes(profile, profile, 0.5);
-    assert(mixed.primary.has_value());
-    assert(mixed.primary->r == profile.primary->r);
+    CHECK(mixed.primary.has_value());
+    CHECK(mixed.primary->r == profile.primary->r);
 
     // Block DNA: inventory and object ID matching.
     auto dna = analyzeBlockDNA(parsed.document);
-    assert(dna.totalObjects == 3);
-    assert(dna.entries.size() == 2);
-    assert(dna.entries[0].objectId == 1);
-    assert(dna.entries[0].count == 2);
-    assert(dna.entries[0].hasBounds);
-    assert(dna.entries[0].minX == 0.0);
-    assert(dna.entries[0].maxX == 200.0);
-    assert(dna.entries[0].minY == 0.0);
-    assert(dna.entries[0].maxY == 30.0);
-    assert(dna.entries[1].objectId == 899);
-    assert(dna.entries[1].count == 1);
+    CHECK(dna.totalObjects == 3);
+    CHECK(dna.entries.size() == 2);
+    CHECK(dna.entries[0].objectId == 1);
+    CHECK(dna.entries[0].count == 2);
+    CHECK(dna.entries[0].hasBounds);
+    CHECK(dna.entries[0].minX == 0.0);
+    CHECK(dna.entries[0].maxX == 200.0);
+    CHECK(dna.entries[0].minY == 0.0);
+    CHECK(dna.entries[0].maxY == 30.0);
+    CHECK(dna.entries[1].objectId == 899);
+    CHECK(dna.entries[1].count == 1);
 
     auto blockMatches = findObjectsById(parsed.document, 1);
-    assert(blockMatches.size() == 2);
-    assert(blockMatches[0] == 0);
-    assert(blockMatches[1] == 2);
+    CHECK(blockMatches.size() == 2);
+    CHECK(blockMatches[0] == 0);
+    CHECK(blockMatches[1] == 2);
 
     // Match reference metadata using exact Geometry Dash object IDs.
     std::vector<BlockReference> references = {
@@ -78,11 +86,11 @@ int main() {
     };
 
     auto referenceMatches = matchBlockReferences(parsed.document, references);
-    assert(referenceMatches.size() == 2);
-    assert(referenceMatches[0].reference.objectId == 899);
-    assert(referenceMatches[0].targetObjectCount == 1);
-    assert(referenceMatches[1].reference.objectId == 1);
-    assert(referenceMatches[1].targetObjectCount == 2);
+    CHECK(referenceMatches.size() == 2);
+    CHECK(referenceMatches[0].reference.objectId == 899);
+    CHECK(referenceMatches[0].targetObjectCount == 1);
+    CHECK(referenceMatches[1].reference.objectId == 1);
+    CHECK(referenceMatches[1].targetObjectCount == 2);
 
     // Decoration planner: exact matches only, no level mutation.
     DecorationSettings settings;
@@ -93,25 +101,25 @@ int main() {
 
     auto plan = buildDecorationPlan(parsed.document, references, settings);
 
-    assert(plan.scannedObjectCount == 3);
-    assert(plan.candidates.size() == 3);
+    CHECK(plan.scannedObjectCount == 3);
+    CHECK(plan.candidates.size() == 3);
 
-    assert(plan.candidates[0].objectId == 899);
-    assert(plan.candidates[0].objectIndex == 1);
+    CHECK(plan.candidates[0].objectId == 899);
+    CHECK(plan.candidates[0].objectIndex == 1);
 
-    assert(plan.candidates[1].objectId == 1);
-    assert(plan.candidates[1].objectIndex == 0);
+    CHECK(plan.candidates[1].objectId == 1);
+    CHECK(plan.candidates[1].objectIndex == 0);
 
-    assert(plan.candidates[2].objectId == 1);
-    assert(plan.candidates[2].objectIndex == 2);
+    CHECK(plan.candidates[2].objectId == 1);
+    CHECK(plan.candidates[2].objectIndex == 2);
 
-    assert(!plan.modifiesLevel);
-    assert(plan.settings.blockSet == BlockSet::Solid);
+    CHECK(!plan.modifiesLevel);
+    CHECK(plan.settings.blockSet == BlockSet::Solid);
 
     settings.blockSet = BlockSet::Glow;
 
     auto glowPlan = buildDecorationPlan(parsed.document, references, settings);
-    assert(glowPlan.candidates.empty());
+    CHECK(glowPlan.candidates.empty());
 
     // Decoration engine: generate read-only decoration proposals.
     DecorationSettings engineSettings;
@@ -137,16 +145,16 @@ int main() {
         20.0
     );
 
-    assert(generation.examinedSources == 3);
-    assert(generation.proposedDecorations == 3);
-    assert(generation.blockedByClearance == 0);
-    assert(generation.skippedInvalidSources == 0);
-    assert(!generation.modifiesLevel);
+    CHECK(generation.examinedSources == 3);
+    CHECK(generation.proposedDecorations == 3);
+    CHECK(generation.blockedByClearance == 0);
+    CHECK(generation.skippedInvalidSources == 0);
+    CHECK(!generation.modifiesLevel);
 
    for (const auto& decoration : generation.decorations) {
     (void)decoration;
-    assert(decoration.decorationObjectId == 700);
-    assert(decoration.sourceObjectId > 0);
+    CHECK(decoration.decorationObjectId == 700);
+    CHECK(decoration.sourceObjectId > 0);
 }
 
     // Invalid clearance must safely produce no decorations.
@@ -157,23 +165,23 @@ int main() {
         -1.0
     );
 
-    assert(invalidGeneration.proposedDecorations == 0);
+    CHECK(invalidGeneration.proposedDecorations == 0);
 
     // Parser error handling tests.
     auto malformed = parseInnerLevelString("kA1,1;1,1,2,0,3;");
-    assert(!malformed.ok);
-    assert(malformed.segment == 1);
+    CHECK(!malformed.ok);
+    CHECK(malformed.segment == 1);
 
     auto missingPosition = parseInnerLevelString("kA1,1;1,1,2,0;");
-    assert(!missingPosition.ok);
+    CHECK(!missingPosition.ok);
 
     auto empty = parseInnerLevelString("");
-    assert(!empty.ok);
+    CHECK(!empty.ok);
 
     std::string oversized(32u * 1024u * 1024u + 1u, 'x');
     auto tooLarge = parseInnerLevelString(oversized);
-    assert(!tooLarge.ok);
-    assert(tooLarge.error.find("32 MiB") != std::string::npos);
+    CHECK(!tooLarge.ok);
+    CHECK(tooLarge.error.find("32 MiB") != std::string::npos);
 
     std::cout << "GeoDecor Studio core tests passed\n";
     return 0;
