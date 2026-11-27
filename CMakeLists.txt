@@ -20,6 +20,7 @@ add_library(${PROJECT_NAME} SHARED
     src/core/ThemeAnalyzer.cpp
     src/core/BlockDNA.cpp
     src/integration/GmdImport.cpp
+    src/integration/EditorApiContract.cpp
     src/core/DecorationPlanner.cpp
     src/core/DecorationEngine.cpp
 )
