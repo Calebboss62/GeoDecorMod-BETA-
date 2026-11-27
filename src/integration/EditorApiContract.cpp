@@ -22,15 +22,13 @@ static_assert(requires(cocos2d::CCDrawNode* draw, cocos2d::CCPoint point,
     draw->drawDot(point, 4.f, color);
 }, "CCDrawNode::drawDot must be available for preview placement markers.");
 
-// ObjectToolbox::allKeys returns sprite-frame keys, not integer object IDs.
-// The runtime catalog must resolve each frame key to an ID before classifying it.
+// In the 2.2081 bindings ObjectToolbox exposes an ID -> frame map and
+// intKeyToFrame(). There is no frameToKey() member in this version.
+// Keep the map type check explicit so the runtime catalog can enumerate IDs
+// without guessing IDs from sprite-frame names.
 static_assert(requires(ObjectToolbox* toolbox) {
-    { toolbox->allKeys() } -> std::same_as<cocos2d::CCArray*>;
-}, "ObjectToolbox::allKeys must be available.");
-
-static_assert(requires(ObjectToolbox* toolbox, char const* frame) {
-    { toolbox->frameToKey(frame) } -> std::same_as<char const*>;
-}, "ObjectToolbox::frameToKey must map a sprite-frame key to its object ID.");
+    { toolbox->m_allKeys } -> std::same_as<gd::map<int, gd::string>&>;
+}, "ObjectToolbox::m_allKeys must expose the 2.2081 object-ID/frame map.");
 
 static_assert(requires(ObjectToolbox* toolbox, int objectID) {
     { toolbox->intKeyToFrame(objectID) } -> std::same_as<char const*>;
